@@ -1,0 +1,52 @@
+name: RoboFood
+description: "RoboFood for reserve Foods"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+  webview_flutter: ^4.10.0
+  webview_flutter_android: ^4.3.2
+  shared_preferences: ^2.5.2
+  html: ^0.15.0 # Use the latest version
+  flutter_launcher_icons: ^0.14.3
+
+
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  msix: ^3.16.8
+  flutter_lints: ^4.0.0
+
+flutter:
+
+  fonts:
+    - family: shabnam
+      fonts:
+        - asset: assets/fonts/shabnam.ttf
+
+  assets:
+    - assets/icon.png
+  uses-material-design: true
+
+flutter_icons:
+  android: true
+
+  image_path: "assets/icon.png"
+
+
+msix_config:
+  display_name: Foodio
+  publisher_display_name: HesamZs
+  identity_name: hesamzs.flutterapp
+  msix_version: 1.0.0.0
+  logo_path: assets\icon.png
+  capabilities: internetClient, location

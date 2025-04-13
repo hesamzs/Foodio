@@ -9,12 +9,16 @@
 <p>1. Flutter</p>
 
 ```
+flutter pub get
 flutter run
 ```
 
 <p>2. Python</p>
 
 ```
+pip install python-bidi
+pip install arabic-reshaper
+pip install selenium
 python3 Foodio.py
 ```
 

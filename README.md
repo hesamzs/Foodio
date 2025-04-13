@@ -17,6 +17,7 @@ flutter run
 
 ```
 pip install python-bidi
+pip install arabic-reshaper
 pip install selenium
 python3 Foodio.py
 ```

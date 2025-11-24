@@ -1,8 +1,8 @@
-name: RoboFood
-description: "RoboFood for reserve Foods"
+name: Foodio
+description: "Foodio for reserve Foods"
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.5.0+1
 
 environment:
   sdk: ^3.5.3
@@ -10,8 +10,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webview_flutter: ^4.10.0
-  webview_flutter_android: ^4.3.2
+  webview_flutter: ^4.4.2
+  webview_flutter_android: ^3.0.0
+  webview_flutter_wkwebview: ^3.0.0
   shared_preferences: ^2.5.2
   html: ^0.15.0 # Use the latest version
   flutter_launcher_icons: ^0.14.3
@@ -24,7 +25,7 @@ dev_dependencies:
     sdk: flutter
 
   msix: ^3.16.8
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
 

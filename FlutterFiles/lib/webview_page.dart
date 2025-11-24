@@ -17,6 +17,7 @@ class _WebViewAppState extends State<WebViewApp> {
   List<String> itemList = [];
   int? selectedIndex;
   bool getFood = false;
+  int _speed = 500;
 
   @override
   void initState() {
@@ -30,10 +31,57 @@ class _WebViewAppState extends State<WebViewApp> {
     super.dispose();
   }
 
+  void _showSpeedDialog() {
+    TextEditingController controller =
+        TextEditingController(text: _speed.toInt().toString());
+
+    showDialog(
+      context: context,
+      builder: (context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          title: const Text('سرعت رفرش'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'میلی ثانیه',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'لغو',
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final value = int.tryParse(controller.text);
+                if (value != null && value >= 0) {
+                  setState(() {
+                    _speed = value;
+                  });
+                }
+                Navigator.pop(context);
+              },
+              child: const Text(
+                'ذخیره',
+                style: const TextStyle(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void initializeWebViewController() {
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..addJavaScriptChannel('Flutter', onMessageReceived: handleJavaScriptMessage)
+      ..addJavaScriptChannel('Flutter',
+          onMessageReceived: handleJavaScriptMessage)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageFinished: handlePageFinished,
@@ -56,11 +104,13 @@ class _WebViewAppState extends State<WebViewApp> {
   void processLabels(String jsonString) {
     try {
       final List<dynamic> decodedList = jsonDecode(jsonString);
-      final List<String> labelList = decodedList.map((item) => item.toString()).toList();
+      final List<String> labelList =
+          decodedList.map((item) => item.toString()).toList();
       final List<String> extractedTexts = [];
 
       for (String label in labelList) {
-        List<String> parts = label.split('|').map((part) => part.trim()).toList();
+        List<String> parts =
+            label.split('|').map((part) => part.trim()).toList();
         if (parts.length > 1) {
           extractedTexts.add(parts[1]);
         }
@@ -82,7 +132,7 @@ class _WebViewAppState extends State<WebViewApp> {
           SnackBar(
             content: Text(
               'خطا در پردازش لیست غذاها: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Shabnam'),
+              style: const TextStyle(),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -100,9 +150,11 @@ class _WebViewAppState extends State<WebViewApp> {
         await autoLogin();
       } else if (url == 'http://food.guilan.ac.ir/index/index.rose') {
         await openFoodPage();
-      } else if (url == 'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=4') {
+      } else if (url ==
+          'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=4') {
         await _getHtmlContent();
-      } else if (url == 'https://food.guilan.ac.ir/nurture/user/multi/reserve/reserve.rose') {
+      } else if (url ==
+          'https://food.guilan.ac.ir/nurture/user/multi/reserve/reserve.rose') {
         await _getHtmlContent();
       }
     } catch (e) {
@@ -111,7 +163,7 @@ class _WebViewAppState extends State<WebViewApp> {
           SnackBar(
             content: Text(
               'خطا در بارگذاری صفحه: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Shabnam'),
+              style: const TextStyle(),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -150,7 +202,7 @@ class _WebViewAppState extends State<WebViewApp> {
           SnackBar(
             content: Text(
               'خطا در ورود به سیستم: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Shabnam'),
+              style: const TextStyle(),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -171,7 +223,7 @@ class _WebViewAppState extends State<WebViewApp> {
           SnackBar(
             content: Text(
               'خطا در انتقال به صفحه غذا: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Shabnam'),
+              style: const TextStyle(),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -196,7 +248,7 @@ class _WebViewAppState extends State<WebViewApp> {
           SnackBar(
             content: Text(
               'خطا در دریافت لیست غذاها: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Shabnam'),
+              style: const TextStyle(),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -217,7 +269,6 @@ class _WebViewAppState extends State<WebViewApp> {
               child: Text(
                 'انتخاب غذا',
                 style: TextStyle(
-                  fontFamily: 'Shabnam',
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -231,7 +282,7 @@ class _WebViewAppState extends State<WebViewApp> {
                   return ListTile(
                     title: Text(
                       itemList[index],
-                      style: const TextStyle(fontFamily: 'Shabnam'),
+                      style: const TextStyle(),
                     ),
                     onTap: () {
                       if (mounted) {
@@ -240,6 +291,7 @@ class _WebViewAppState extends State<WebViewApp> {
                       if (dialogContext.mounted) {
                         Navigator.of(dialogContext).pop();
                       }
+                      // print(index);
                       _refreshAndCheckElement(selectedIndex!);
                     },
                   );
@@ -255,7 +307,7 @@ class _WebViewAppState extends State<WebViewApp> {
                 },
                 child: const Text(
                   'انصراف',
-                  style: TextStyle(fontFamily: 'Shabnam', color: Colors.red),
+                  style: TextStyle(color: Colors.red),
                 ),
               ),
             ],
@@ -272,19 +324,20 @@ class _WebViewAppState extends State<WebViewApp> {
       String jsCode = '''
         location. reload()
         window.alert = function(message){
-          console.log("acc"+message);
           return true;
         }    
         var element = document.getElementById('buyFreeFoodIconSpanuserWeekReserves.selected$index');
         if (element) {
           Flutter.postMessage("Done");
           console.log('Element clicked: buyFreeFoodIconSpanuserWeekReserves.selected$index');
-          document.querySelector('img[src="/images/buy.png"]').click();
-          document.getElementById('doReservBtn').click();
+          var img = element.closest('tr')?.querySelector('img[src="/images/buy.png"]');
+          if (img) img.click();  
+          document.getElementById('doReservBtn').click(); 
         } else {
           console.log('Element not found: buyFreeFoodIconSpanuserWeekReserves.selected$index');
         }
       ''';
+
 
       Future.delayed(const Duration(milliseconds: 500), () async {
         if (!mounted) return;
@@ -293,7 +346,11 @@ class _WebViewAppState extends State<WebViewApp> {
           try {
             await controller.runJavaScript(jsCode);
             if (mounted && !getFood) {
-              _refreshAndCheckElement(index);
+              Future.delayed(Duration(milliseconds: _speed), () {
+                setState(() {
+                  _refreshAndCheckElement(index);
+                });
+              });
             }
           } catch (e) {
             if (mounted) {
@@ -301,7 +358,7 @@ class _WebViewAppState extends State<WebViewApp> {
                 SnackBar(
                   content: Text(
                     'خطا در بروزرسانی: ${e.toString()}',
-                    style: const TextStyle(fontFamily: 'Shabnam'),
+                    style: const TextStyle(),
                   ),
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -322,7 +379,7 @@ class _WebViewAppState extends State<WebViewApp> {
           SnackBar(
             content: Text(
               'خطا در بررسی غذا: ${e.toString()}',
-              style: const TextStyle(fontFamily: 'Shabnam'),
+              style: const TextStyle(),
             ),
             behavior: SnackBarBehavior.floating,
           ),
@@ -333,79 +390,102 @@ class _WebViewAppState extends State<WebViewApp> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.arrow_forward_ios_rounded)),
-          ],
-          leading: IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              try {
-                const String jsCode = '''
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+
+      theme: ThemeData(
+        fontFamily: 'shabnam', // Add your custom Persian font here
+      ),
+      home: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          appBar: AppBar(
+            actions: [
+              IconButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.arrow_forward_ios_rounded)),
+            ],
+            leadingWidth: 120,
+            leading: Row(
+              children: [
+                SizedBox(
+                  width: 12,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    try {
+                      const String jsCode = '''
                     window.location.href = 'https://food.guilan.ac.ir/accessMgmt/action/logout.rose';
                   ''';
 
-                await controller.runJavaScript(jsCode);
+                      await controller.runJavaScript(jsCode);
 
-                if (mounted && context.mounted) {
-                  Navigator.pop(context);
-                }
-              } catch (e) {
-                if (mounted && context.mounted && ScaffoldMessenger.of(context).mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'خطا در خروج از سیستم: ${e.toString()}',
-                        style: const TextStyle(fontFamily: 'Shabnam'),
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              }
-            },
-          ),
-        ),
-        floatingActionButton: selectedIndex== null ? Container() : FloatingActionButton(
-          onPressed: () {
-            setState(() {
-
-
-              getFood = true;
-            });
-          },
-
-          child:const Icon(Icons.stop),
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.purple,
-
-          shape: CircleBorder(),
-        )  ,
-        body: Column(
-          children: [
-            Expanded(
-              child: WebViewWidget(controller: controller),
+                      if (mounted && context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    } catch (e) {
+                      if (mounted &&
+                          context.mounted &&
+                          ScaffoldMessenger.of(context).mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'خطا در خروج از سیستم: ${e.toString()}',
+                              style: const TextStyle(),
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                SizedBox(
+                  width: 12,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.speed),
+                  onPressed: () async {
+                    _showSpeedDialog();
+                  },
+                ),
+              ],
             ),
-            if (selectedIndex != null && itemList.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'غذا انتخاب شده: ${itemList[selectedIndex!]}',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: 'Shabnam',
-                    fontSize: 18,
+          ),
+          floatingActionButton: selectedIndex == null
+              ? Container()
+              : FloatingActionButton(
+                  onPressed: () {
+                    setState(() {
+                      getFood = true;
+                    });
+                  },
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.purple,
+                  shape: CircleBorder(),
+                  child: const Icon(Icons.stop),
+                ),
+          body: Column(
+            children: [
+              Expanded(
+                child: WebViewWidget(controller: controller),
+              ),
+              if (selectedIndex != null && itemList.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'غذا انتخاب شده: ${itemList[selectedIndex!]}',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

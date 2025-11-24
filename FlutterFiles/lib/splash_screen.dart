@@ -70,7 +70,7 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation>
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
               ),
               const Text(
-                "v0.1",
+                "v1.1",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w300),
               ),
               const Expanded(flex: 2,child: SizedBox(),),

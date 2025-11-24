@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'package:RoboFood/splash_screen.dart';
-import 'package:RoboFood/webview_page.dart';
+import 'splash_screen.dart';
+import 'webview_page.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -36,9 +36,15 @@ class _ContactListPageState extends State<ContactListPage> {
   @override
   void initState() {
     super.initState();
+    // Future<void> deleteAllContacts() async {
+    //   final prefs = await SharedPreferences.getInstance();
+    //   await prefs.remove('contacts');
+    //   // Reload your contacts or update UI
+    //   loadContacts(); // Call your existing function to refresh the list
+    // }
+    // deleteAllContacts();
     loadContacts();
   }
-
 
   Future<void> loadContacts() async {
     final prefs = await SharedPreferences.getInstance();
@@ -55,7 +61,8 @@ class _ContactListPageState extends State<ContactListPage> {
     });
   }
 
-  Future<void> saveContact(String name, String username, String password) async {
+  Future<void> saveContact(
+      String name, String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
     final contact = jsonEncode({
       'name': name,
@@ -67,6 +74,32 @@ class _ContactListPageState extends State<ContactListPage> {
     await prefs.setStringList('contacts', contactList);
     loadContacts();
   }
+
+
+  Future<void> editContact(
+      int index,
+      String name,
+      String username,
+      String password
+      ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final contactList = prefs.getStringList('contacts') ?? [];
+
+    // Remove the old contact
+    contactList.removeAt(index);
+
+    // Add the updated contact
+    final updatedContact = jsonEncode({
+      'name': name,
+      'username': username,
+      'password': password,
+    });
+    contactList.insert(index, updatedContact);
+
+    await prefs.setStringList('contacts', contactList);
+    loadContacts();
+  }
+
 
   void _showAddContactDialog() {
     _nameController.clear();
@@ -80,9 +113,8 @@ class _ContactListPageState extends State<ContactListPage> {
           // Force RTL layout
           textDirection: TextDirection.rtl,
           child: AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8)
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             title: const FittedBox(
               fit: BoxFit.scaleDown, // Scales text down if needed
               child: Text(
@@ -90,7 +122,8 @@ class _ContactListPageState extends State<ContactListPage> {
                 style: TextStyle(
                   fontFamily: 'Shabnam',
                   fontWeight: FontWeight.bold,
-                  fontSize: 20, // Base size (will scale down if space is limited)
+                  fontSize:
+                      20, // Base size (will scale down if space is limited)
                 ),
               ),
             ),
@@ -98,7 +131,9 @@ class _ContactListPageState extends State<ContactListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const SizedBox(height: 20,),
+                  const SizedBox(
+                    height: 20,
+                  ),
                   TextField(
                     controller: _nameController,
                     textAlign: TextAlign.right, // RTL alignment
@@ -126,7 +161,7 @@ class _ContactListPageState extends State<ContactListPage> {
                   TextField(
                     controller: _passwordController,
                     textAlign: TextAlign.right,
-                    obscureText: true, // Hide password
+                    // obscureText: true, // Hide password
                     decoration: InputDecoration(
                       labelText: 'پسورد',
                       labelStyle: const TextStyle(fontFamily: 'Shabnam'),
@@ -138,7 +173,8 @@ class _ContactListPageState extends State<ContactListPage> {
                 ],
               ),
             ),
-            actionsAlignment: MainAxisAlignment.spaceBetween, // Better button spacing
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            // Better button spacing
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -158,7 +194,9 @@ class _ContactListPageState extends State<ContactListPage> {
                   ),
                 ),
                 onPressed: () {
-                  if (_nameController.text.isEmpty || _usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+                  if (_nameController.text.isEmpty ||
+                      _usernameController.text.isEmpty ||
+                      _passwordController.text.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -170,6 +208,137 @@ class _ContactListPageState extends State<ContactListPage> {
                     return;
                   }
                   saveContact(
+                    _nameController.text,
+                    _usernameController.text,
+                    _passwordController.text,
+                  );
+                  _nameController.clear();
+                  _usernameController.clear();
+                  _passwordController.clear();
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'ذخیره',
+                  style: TextStyle(
+                    fontFamily: 'Shabnam',
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditContactDialog(Map<String, String> contact , int index) {
+    _nameController.text = contact["name"]!;
+    _usernameController.text = contact["username"]!;
+    _passwordController.text = contact["password"]!;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Directionality(
+          // Force RTL layout
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            title: const FittedBox(
+              fit: BoxFit.scaleDown, // Scales text down if needed
+              child: Text(
+                'ویرایش حساب کاربری',
+                style: TextStyle(
+                  fontFamily: 'Shabnam',
+                  fontWeight: FontWeight.bold,
+                  fontSize:
+                  20, // Base size (will scale down if space is limited)
+                ),
+              ),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  TextField(
+                    controller: _nameController,
+                    textAlign: TextAlign.right, // RTL alignment
+                    decoration: InputDecoration(
+                      labelText: 'حساب کاربری',
+                      labelStyle: const TextStyle(fontFamily: 'Shabnam'),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _usernameController,
+                    textAlign: TextAlign.right,
+                    decoration: InputDecoration(
+                      labelText: 'یوزرنیم',
+                      labelStyle: const TextStyle(fontFamily: 'Shabnam'),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _passwordController,
+                    textAlign: TextAlign.right,
+                    // obscureText: true, // Hide password
+                    decoration: InputDecoration(
+                      labelText: 'پسورد',
+                      labelStyle: const TextStyle(fontFamily: 'Shabnam'),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            // Better button spacing
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text(
+                  'لغو',
+                  style: TextStyle(
+                    fontFamily: 'Shabnam',
+                    color: Colors.red,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue, // Modern button color
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  if (_nameController.text.isEmpty ||
+                      _usernameController.text.isEmpty ||
+                      _passwordController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'لطفا تمام فیلدها را پر کنید!',
+                          style: TextStyle(fontFamily: 'Shabnam'),
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+                  editContact(index,
                     _nameController.text,
                     _usernameController.text,
                     _passwordController.text,
@@ -232,24 +401,54 @@ class _ContactListPageState extends State<ContactListPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: ListTile(
-                    title: Text(
-                      contact['name']!,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(contact['username']!),
-                    trailing: const Icon(Icons.arrow_forward_ios),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => WebViewApp(
-                            username: contact['username']!,
-                            password: contact['password']!,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => WebViewApp(
+                                  username: contact['username']!,
+                                  password: contact['password']!,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 16, horizontal: 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  contact['name']!,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(contact['username']!),
+                              ],
+                            ),
                           ),
                         ),
-                      );
-                    },
+                      ),
+                      GestureDetector(
+                        child: Icon(Icons.edit),
+                        onTap: () {
+                          _showEditContactDialog(contact,index);
+                        },
+                      ),
+                      SizedBox(
+                        width: 16,
+                      ),
+                      Icon(Icons.arrow_forward_ios),
+                      SizedBox(
+                        width: 16,
+                      )
+                    ],
                   ),
                 );
               },
@@ -260,4 +459,3 @@ class _ContactListPageState extends State<ContactListPage> {
     );
   }
 }
-

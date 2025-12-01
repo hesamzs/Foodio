@@ -18,7 +18,21 @@ class _WebViewAppState extends State<WebViewApp> {
   int? selectedIndex;
   bool getFood = false;
   int _speed = 500;
+  final Map<String, int> selfOptions = const {
+    'سلف مرکزی': 1,
+    'سلف تربیت بدنی': 2,
+    'سلف علوم پایه': 4,
+    'سلف صومعه سرا': 5,
+    'خوابگاه اتقیا': 6,
+    'سلف سرویس شرق': 7,
+    'خوابگاه انصاری': 8,
+    'خوابگاه کریمی': 9,
+    'خوابگاه کوثر': 11,
+    'خوابگاه مهمانسرا': 12,
+    'سلف کشاورزی': 13,
+  };
 
+  int? selectedSelfCode;
   @override
   void initState() {
     super.initState();
@@ -32,8 +46,9 @@ class _WebViewAppState extends State<WebViewApp> {
   }
 
   void _showSpeedDialog() {
-    TextEditingController controller =
-        TextEditingController(text: _speed.toInt().toString());
+    TextEditingController controller = TextEditingController(
+      text: _speed.toInt().toString(),
+    );
 
     showDialog(
       context: context,
@@ -52,9 +67,7 @@ class _WebViewAppState extends State<WebViewApp> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'لغو',
-              ),
+              child: const Text('لغو'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -66,10 +79,7 @@ class _WebViewAppState extends State<WebViewApp> {
                 }
                 Navigator.pop(context);
               },
-              child: const Text(
-                'ذخیره',
-                style: TextStyle(),
-              ),
+              child: const Text('ذخیره', style: const TextStyle()),
             ),
           ],
         ),
@@ -80,12 +90,12 @@ class _WebViewAppState extends State<WebViewApp> {
   void initializeWebViewController() {
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..addJavaScriptChannel('Flutter',
-          onMessageReceived: handleJavaScriptMessage)
+      ..addJavaScriptChannel(
+        'Flutter',
+        onMessageReceived: handleJavaScriptMessage,
+      )
       ..setNavigationDelegate(
-        NavigationDelegate(
-          onPageFinished: handlePageFinished,
-        ),
+        NavigationDelegate(onPageFinished: handlePageFinished),
       )
       ..loadRequest(Uri.parse('http://food.guilan.ac.ir/index.rose'));
   }
@@ -150,8 +160,9 @@ class _WebViewAppState extends State<WebViewApp> {
         await autoLogin();
       } else if (url == 'http://food.guilan.ac.ir/index/index.rose') {
         await openFoodPage();
-      } else if (url ==
-          'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=4') {
+      } else if (url.startsWith(
+        'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose',
+      )) {
         await _getHtmlContent();
       } else if (url ==
           'https://food.guilan.ac.ir/nurture/user/multi/reserve/reserve.rose') {
@@ -212,9 +223,19 @@ class _WebViewAppState extends State<WebViewApp> {
   }
 
   Future<void> openFoodPage() async {
-    const String jsCode = '''
-      window.location.href = 'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=4';
-    ''';
+    if (selectedSelfCode == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showSelfSelectionDialog();
+      });
+      return;
+    }
+
+    final String url =
+        'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=$selectedSelfCode';
+
+    final String jsCode = '''
+    window.location.href = '$url';
+  ''';
     try {
       await controller.runJavaScript(jsCode);
     } catch (e) {
@@ -230,6 +251,50 @@ class _WebViewAppState extends State<WebViewApp> {
         );
       }
     }
+  }
+
+  void _showSelfSelectionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text(
+              'انتخاب سلف',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: selfOptions.length,
+                itemBuilder: (context, index) {
+                  final selfName = selfOptions.keys.elementAt(index);
+                  final selfCode = selfOptions.values.elementAt(index);
+
+                  return ListTile(
+                    title: Text(selfName),
+                    onTap: () {
+                      if (mounted) {
+                        setState(() {
+                          selectedSelfCode = selfCode;
+                        });
+                      }
+                      if (dialogContext.mounted) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                      openFoodPage();
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _getHtmlContent() async {
@@ -268,9 +333,7 @@ class _WebViewAppState extends State<WebViewApp> {
               fit: BoxFit.scaleDown,
               child: Text(
                 'انتخاب غذا',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
             content: SizedBox(
@@ -280,10 +343,7 @@ class _WebViewAppState extends State<WebViewApp> {
                 itemCount: itemList.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(
-                      itemList[index],
-                      style: const TextStyle(),
-                    ),
+                    title: Text(itemList[index], style: const TextStyle()),
                     onTap: () {
                       if (mounted) {
                         setState(() => selectedIndex = index);
@@ -400,17 +460,16 @@ class _WebViewAppState extends State<WebViewApp> {
           appBar: AppBar(
             actions: [
               IconButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  icon: const Icon(Icons.arrow_forward_ios_rounded)),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_forward_ios_rounded),
+              ),
             ],
             leadingWidth: 120,
             leading: Row(
               children: [
-                SizedBox(
-                  width: 12,
-                ),
+                SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
@@ -441,9 +500,7 @@ class _WebViewAppState extends State<WebViewApp> {
                     }
                   },
                 ),
-                SizedBox(
-                  width: 12,
-                ),
+                SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.speed),
                   onPressed: () async {
@@ -468,18 +525,14 @@ class _WebViewAppState extends State<WebViewApp> {
                 ),
           body: Column(
             children: [
-              Expanded(
-                child: WebViewWidget(controller: controller),
-              ),
+              Expanded(child: WebViewWidget(controller: controller)),
               if (selectedIndex != null && itemList.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Text(
                     'غذا انتخاب شده: ${itemList[selectedIndex!]}',
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 18,
-                    ),
+                    style: const TextStyle(fontSize: 18),
                   ),
                 ),
             ],

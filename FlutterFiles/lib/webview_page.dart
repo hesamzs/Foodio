@@ -68,7 +68,7 @@ class _WebViewAppState extends State<WebViewApp> {
               },
               child: const Text(
                 'ذخیره',
-                style: const TextStyle(),
+                style: TextStyle(),
               ),
             ),
           ],
@@ -338,7 +338,6 @@ class _WebViewAppState extends State<WebViewApp> {
         }
       ''';
 
-
       Future.delayed(const Duration(milliseconds: 500), () async {
         if (!mounted) return;
 
@@ -392,7 +391,6 @@ class _WebViewAppState extends State<WebViewApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-
       theme: ThemeData(
         fontFamily: 'shabnam', // Add your custom Persian font here
       ),

@@ -75,13 +75,8 @@ class _ContactListPageState extends State<ContactListPage> {
     loadContacts();
   }
 
-
   Future<void> editContact(
-      int index,
-      String name,
-      String username,
-      String password
-      ) async {
+      int index, String name, String username, String password) async {
     final prefs = await SharedPreferences.getInstance();
     final contactList = prefs.getStringList('contacts') ?? [];
 
@@ -99,7 +94,6 @@ class _ContactListPageState extends State<ContactListPage> {
     await prefs.setStringList('contacts', contactList);
     loadContacts();
   }
-
 
   void _showAddContactDialog() {
     _nameController.clear();
@@ -232,7 +226,7 @@ class _ContactListPageState extends State<ContactListPage> {
     );
   }
 
-  void _showEditContactDialog(Map<String, String> contact , int index) {
+  void _showEditContactDialog(Map<String, String> contact, int index) {
     _nameController.text = contact["name"]!;
     _usernameController.text = contact["username"]!;
     _passwordController.text = contact["password"]!;
@@ -245,7 +239,7 @@ class _ContactListPageState extends State<ContactListPage> {
           textDirection: TextDirection.rtl,
           child: AlertDialog(
             shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             title: const FittedBox(
               fit: BoxFit.scaleDown, // Scales text down if needed
               child: Text(
@@ -254,7 +248,7 @@ class _ContactListPageState extends State<ContactListPage> {
                   fontFamily: 'Shabnam',
                   fontWeight: FontWeight.bold,
                   fontSize:
-                  20, // Base size (will scale down if space is limited)
+                      20, // Base size (will scale down if space is limited)
                 ),
               ),
             ),
@@ -338,7 +332,8 @@ class _ContactListPageState extends State<ContactListPage> {
                     );
                     return;
                   }
-                  editContact(index,
+                  editContact(
+                    index,
                     _nameController.text,
                     _usernameController.text,
                     _passwordController.text,
@@ -438,7 +433,7 @@ class _ContactListPageState extends State<ContactListPage> {
                       GestureDetector(
                         child: Icon(Icons.edit),
                         onTap: () {
-                          _showEditContactDialog(contact,index);
+                          _showEditContactDialog(contact, index);
                         },
                       ),
                       SizedBox(

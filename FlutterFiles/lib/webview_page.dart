@@ -79,7 +79,7 @@ class _WebViewAppState extends State<WebViewApp> {
                 }
                 Navigator.pop(context);
               },
-              child: const Text('ذخیره', style: const TextStyle()),
+              child: const Text('ذخیره', style: TextStyle()),
             ),
           ],
         ),

@@ -32,6 +32,8 @@ class _ContactListPageState extends State<ContactListPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _defaultSelfCodeController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -56,18 +58,20 @@ class _ContactListPageState extends State<ContactListPage> {
           'name': data['name']?.toString() ?? 'Unknown',
           'username': data['username']?.toString() ?? 'Unknown',
           'password': data['password']?.toString() ?? 'Unknown',
+          'defaultSelfCode': data['defaultSelfCode']?.toString() ?? 'Unknown',
         };
       }).toList();
     });
   }
 
-  Future<void> saveContact(
-      String name, String username, String password) async {
+  Future<void> saveContact(String name, String username, String password,
+      [int? defaultSelfCode]) async {
     final prefs = await SharedPreferences.getInstance();
     final contact = jsonEncode({
       'name': name,
       'username': username,
       'password': password,
+      'defaultSelfCode': defaultSelfCode,
     });
     final contactList = prefs.getStringList('contacts') ?? [];
     contactList.add(contact);
@@ -76,7 +80,8 @@ class _ContactListPageState extends State<ContactListPage> {
   }
 
   Future<void> editContact(
-      int index, String name, String username, String password) async {
+      int index, String name, String username, String password,
+      [int? defaultSelfCode]) async {
     final prefs = await SharedPreferences.getInstance();
     final contactList = prefs.getStringList('contacts') ?? [];
 
@@ -88,6 +93,7 @@ class _ContactListPageState extends State<ContactListPage> {
       'name': name,
       'username': username,
       'password': password,
+      'defaultSelfCode': defaultSelfCode,
     });
     contactList.insert(index, updatedContact);
 
@@ -99,6 +105,7 @@ class _ContactListPageState extends State<ContactListPage> {
     _nameController.clear();
     _usernameController.clear();
     _passwordController.clear();
+    _defaultSelfCodeController.clear();
 
     showDialog(
       context: context,
@@ -230,7 +237,7 @@ class _ContactListPageState extends State<ContactListPage> {
     _nameController.text = contact["name"]!;
     _usernameController.text = contact["username"]!;
     _passwordController.text = contact["password"]!;
-
+    _defaultSelfCodeController.text = contact["defaultSelfCode"] ?? '';
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -295,6 +302,19 @@ class _ContactListPageState extends State<ContactListPage> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _defaultSelfCodeController,
+                    textAlign: TextAlign.right,
+                    // obscureText: true, // Hide password
+                    decoration: InputDecoration(
+                      labelText: 'سلف پیش فرض',
+                      labelStyle: const TextStyle(fontFamily: 'Shabnam'),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -332,15 +352,20 @@ class _ContactListPageState extends State<ContactListPage> {
                     );
                     return;
                   }
+                  int? defaultSelfCode =
+                      int.tryParse(_defaultSelfCodeController.text);
+
                   editContact(
                     index,
                     _nameController.text,
                     _usernameController.text,
                     _passwordController.text,
+                    defaultSelfCode,
                   );
                   _nameController.clear();
                   _usernameController.clear();
                   _passwordController.clear();
+                  _defaultSelfCodeController.clear();
                   Navigator.of(context).pop();
                 },
                 child: const Text(
@@ -400,16 +425,28 @@ class _ContactListPageState extends State<ContactListPage> {
                     children: [
                       Expanded(
                         child: InkWell(
-                          onTap: () {
-                            Navigator.push(
+                          onTap: () async {
+                            await Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => WebViewApp(
                                   username: contact['username']!,
                                   password: contact['password']!,
+                                  defaultSelfCode: int.tryParse(
+                                      contact['defaultSelfCode'] ?? ''),
+                                  onDefaultSelfSelected: (newSelfCode) {
+                                    editContact(
+                                      index,
+                                      contact['name']!,
+                                      contact['username']!,
+                                      contact['password']!,
+                                      newSelfCode,
+                                    );
+                                  },
                                 ),
                               ),
                             );
+                            loadContacts();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(

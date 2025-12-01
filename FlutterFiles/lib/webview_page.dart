@@ -5,9 +5,15 @@ import 'package:webview_flutter/webview_flutter.dart';
 class WebViewApp extends StatefulWidget {
   final String username;
   final String password;
-
-  const WebViewApp({super.key, required this.username, required this.password});
-
+  final int? defaultSelfCode;
+  final Function(int)? onDefaultSelfSelected;
+  const WebViewApp({
+    super.key,
+    required this.username,
+    required this.password,
+    this.defaultSelfCode,
+    this.onDefaultSelfSelected,
+  });
   @override
   State<WebViewApp> createState() => _WebViewAppState();
 }
@@ -18,24 +24,13 @@ class _WebViewAppState extends State<WebViewApp> {
   int? selectedIndex;
   bool getFood = false;
   int _speed = 500;
-  final Map<String, int> selfOptions = const {
-    'سلف مرکزی': 1,
-    'سلف تربیت بدنی': 2,
-    'سلف علوم پایه': 4,
-    'سلف صومعه سرا': 5,
-    'خوابگاه اتقیا': 6,
-    'سلف سرویس شرق': 7,
-    'خوابگاه انصاری': 8,
-    'خوابگاه کریمی': 9,
-    'خوابگاه کوثر': 11,
-    'خوابگاه مهمانسرا': 12,
-    'سلف کشاورزی': 13,
-  };
-
+  Map<String, int> selfOptions = {};
   int? selectedSelfCode;
+
   @override
   void initState() {
     super.initState();
+    selectedSelfCode = widget.defaultSelfCode;
     initializeWebViewController();
   }
 
@@ -106,8 +101,48 @@ class _WebViewAppState extends State<WebViewApp> {
     final String jsonString = message.message;
     if (jsonString == "Done") {
       setState(() => getFood = true);
+    } else if (jsonString.startsWith("SELF_OPTIONS:")) {
+      processSelfOptions(jsonString.substring(13));
     } else {
       processLabels(jsonString);
+    }
+  }
+
+  void processSelfOptions(String jsonString) {
+    try {
+      final Map<String, dynamic> decoded = jsonDecode(jsonString);
+
+      final Map<String, int> extractedSelfOptions = {};
+
+      decoded.forEach((key, value) {
+        if (value is int) {
+          extractedSelfOptions[key] = value;
+        }
+      });
+
+      if (mounted && extractedSelfOptions.isNotEmpty) {
+        setState(() {
+          selfOptions = extractedSelfOptions;
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && selectedSelfCode == null) {
+            _showSelfSelectionDialog();
+          } else if (mounted && selectedSelfCode != null) {
+            openFoodPage();
+          }
+        });
+      } else {}
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'خطا در پردازش لیست سلف‌ها: ${e.toString()}',
+            style: const TextStyle(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -152,14 +187,18 @@ class _WebViewAppState extends State<WebViewApp> {
   }
 
   Future<void> handlePageFinished(String url) async {
-    print('Page finished loading: $url');
     if (!mounted) return;
 
     try {
       if (url == 'http://food.guilan.ac.ir/index.rose') {
         await autoLogin();
       } else if (url == 'http://food.guilan.ac.ir/index/index.rose') {
-        await openFoodPage();
+        if (selectedSelfCode != null) {
+          openFoodPage();
+        } else {
+          await openReserveDialog();
+          await extractSelfOptions();
+        }
       } else if (url.startsWith(
         'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose',
       )) {
@@ -222,7 +261,97 @@ class _WebViewAppState extends State<WebViewApp> {
     }
   }
 
+  Future<void> openReserveDialog() async {
+    final String jsCode = '''
+      (function() {
+        
+        const reserveLink = document.querySelector('span[onclick*="selectSelf.rose"]');
+        
+        if (reserveLink) {
+          reserveLink.click();
+          
+          setTimeout(function() {
+            const dialog = document.querySelector('.ui-dialog');
+
+          }, 500);
+        }
+      })();
+    ''';
+
+    try {
+      await controller.runJavaScript(jsCode);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'خطا در باز کردن دیالوگ: ${e.toString()}',
+            style: const TextStyle(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> extractSelfOptions() async {
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    const String jsCode = '''
+    (function() {
+      const selfOptionsMap = {};
+      const selectElement = document.getElementById('selectself_selfListId');
+      
+      if (selectElement) {
+        const options = selectElement.querySelectorAll('option');
+        
+        options.forEach(option => {
+          const value = option.value;
+          const text = option.textContent.trim();
+          
+          if (value && value !== '-1' && !isNaN(value)) {
+            const selfName = text.split(' - ')[0].trim();
+            selfOptionsMap[selfName] = parseInt(value);
+          }
+        });
+        
+        const dialogClose = document.querySelector('.ui-dialog-titlebar-close');
+        if (dialogClose) dialogClose.click();
+      }
+      
+      Flutter.postMessage('SELF_OPTIONS:' + JSON.stringify(selfOptionsMap));
+    })();
+  ''';
+
+    try {
+      await controller.runJavaScript(jsCode);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'خطا در پردازش لیست سلف‌ها: ${e.toString()}',
+            style: const TextStyle(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> openFoodPage() async {
+    if (selectedSelfCode != null) {
+      final String url =
+          'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=$selectedSelfCode';
+
+      final String jsCode = '''
+        window.location.href = '$url';
+      ''';
+      try {
+        await controller.runJavaScript(jsCode);
+      } catch (e) {
+        // ...
+      }
+      return;
+    }
     if (selectedSelfCode == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _showSelfSelectionDialog();
@@ -254,6 +383,16 @@ class _WebViewAppState extends State<WebViewApp> {
   }
 
   void _showSelfSelectionDialog() {
+    if (selfOptions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('لیست سلف‌ها خالی است'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -284,6 +423,7 @@ class _WebViewAppState extends State<WebViewApp> {
                       }
                       if (dialogContext.mounted) {
                         Navigator.of(dialogContext).pop();
+                        _showDefaultConfirmationDialog(selfCode, selfName);
                       }
                       openFoodPage();
                     },
@@ -291,6 +431,54 @@ class _WebViewAppState extends State<WebViewApp> {
                 },
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDefaultConfirmationDialog(int selfCode, String selfName) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: AlertDialog(
+            title: const Text('انتخاب نهایی سلف'),
+            content: Text(
+                'آیا می‌خواهید "$selfName" را به عنوان سلف **پیش‌فرض** برای این حساب ذخیره کنید؟'),
+            actionsAlignment: MainAxisAlignment.spaceBetween,
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  if (mounted) {
+                    setState(() {
+                      selectedSelfCode = selfCode;
+                    });
+                    openFoodPage();
+                  }
+                },
+                child:
+                    const Text('فقط رزرو', style: TextStyle(color: Colors.red)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (widget.onDefaultSelfSelected != null) {
+                    widget.onDefaultSelfSelected!(selfCode);
+                  }
+                  Navigator.of(context).pop();
+                  if (mounted) {
+                    setState(() {
+                      selectedSelfCode = selfCode;
+                    });
+                    openFoodPage();
+                  }
+                },
+                child: const Text('ذخیره و رزرو'),
+              ),
+            ],
           ),
         );
       },
@@ -351,7 +539,6 @@ class _WebViewAppState extends State<WebViewApp> {
                       if (dialogContext.mounted) {
                         Navigator.of(dialogContext).pop();
                       }
-                      // print(index);
                       _refreshAndCheckElement(selectedIndex!);
                     },
                   );
@@ -379,10 +566,8 @@ class _WebViewAppState extends State<WebViewApp> {
 
   Future<void> _refreshAndCheckElement(int index) async {
     try {
-      // await controller.reload();
-
       String jsCode = '''
-        location. reload()
+        location.reload()
         window.alert = function(message){
           return true;
         }    
@@ -452,7 +637,7 @@ class _WebViewAppState extends State<WebViewApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'shabnam', // Add your custom Persian font here
+        fontFamily: 'shabnam',
       ),
       home: Directionality(
         textDirection: TextDirection.rtl,

@@ -58,7 +58,10 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Expanded(flex: 1,child: SizedBox(),),
+              const Expanded(
+                flex: 1,
+                child: SizedBox(),
+              ),
 
               // App logo with animation
               Image.asset('assets/icon.png', width: 150),
@@ -73,7 +76,10 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation>
                 "v1.1",
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w300),
               ),
-              const Expanded(flex: 2,child: SizedBox(),),
+              const Expanded(
+                flex: 2,
+                child: SizedBox(),
+              ),
             ],
           ),
         ),

@@ -5,12 +5,14 @@ import 'package:webview_flutter/webview_flutter.dart';
 class WebViewApp extends StatefulWidget {
   final String username;
   final String password;
+  final String selfUrl;
   final int? defaultSelfCode;
   final Function(int)? onDefaultSelfSelected;
   const WebViewApp({
     super.key,
     required this.username,
     required this.password,
+    required this.selfUrl,
     this.defaultSelfCode,
     this.onDefaultSelfSelected,
   });
@@ -85,6 +87,8 @@ class _WebViewAppState extends State<WebViewApp> {
   void initializeWebViewController() {
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent(
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
       ..addJavaScriptChannel(
         'Flutter',
         onMessageReceived: handleJavaScriptMessage,
@@ -92,7 +96,7 @@ class _WebViewAppState extends State<WebViewApp> {
       ..setNavigationDelegate(
         NavigationDelegate(onPageFinished: handlePageFinished),
       )
-      ..loadRequest(Uri.parse('http://food.guilan.ac.ir/index.rose'));
+      ..loadRequest(Uri.parse('${widget.selfUrl}/index.rose'));
   }
 
   void handleJavaScriptMessage(JavaScriptMessage message) {
@@ -190,9 +194,9 @@ class _WebViewAppState extends State<WebViewApp> {
     if (!mounted) return;
 
     try {
-      if (url == 'http://food.guilan.ac.ir/index.rose') {
+      if (url == '${widget.selfUrl}/index.rose') {
         await autoLogin();
-      } else if (url == 'http://food.guilan.ac.ir/index/index.rose') {
+      } else if (url == '${widget.selfUrl}/index/index.rose') {
         if (selectedSelfCode != null) {
           openFoodPage();
         } else {
@@ -200,11 +204,11 @@ class _WebViewAppState extends State<WebViewApp> {
           await extractSelfOptions();
         }
       } else if (url.startsWith(
-        'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose',
+        '${widget.selfUrl}/nurture/user/multi/reserve/showPanel.rose',
       )) {
         await _getHtmlContent();
       } else if (url ==
-          'https://food.guilan.ac.ir/nurture/user/multi/reserve/reserve.rose') {
+          '${widget.selfUrl}/nurture/user/multi/reserve/reserve.rose') {
         await _getHtmlContent();
       }
     } catch (e) {
@@ -340,7 +344,7 @@ class _WebViewAppState extends State<WebViewApp> {
   Future<void> openFoodPage() async {
     if (selectedSelfCode != null) {
       final String url =
-          'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=$selectedSelfCode';
+          '${widget.selfUrl}/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=$selectedSelfCode';
 
       final String jsCode = '''
         window.location.href = '$url';
@@ -360,7 +364,7 @@ class _WebViewAppState extends State<WebViewApp> {
     }
 
     final String url =
-        'https://food.guilan.ac.ir/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=$selectedSelfCode';
+        '${widget.selfUrl}/nurture/user/multi/reserve/showPanel.rose?selectedSelfDefId=$selectedSelfCode';
 
     final String jsCode = '''
     window.location.href = '$url';
@@ -659,8 +663,8 @@ class _WebViewAppState extends State<WebViewApp> {
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
                     try {
-                      const String jsCode = '''
-                    window.location.href = 'https://food.guilan.ac.ir/accessMgmt/action/logout.rose';
+                      final String jsCode = '''
+                    window.location.href = '${widget.selfUrl}/accessMgmt/action/logout.rose';
                   ''';
 
                       await controller.runJavaScript(jsCode);
